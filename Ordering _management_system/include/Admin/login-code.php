@@ -4,37 +4,49 @@ session_start();
 
 if (isset($_POST['login_btn'])) {
     $uname = $_POST['uname'];
-    $pass = md5($_POST['pass']);
+    $pass = $_POST['pass'];
 
-    $login_query = "SELECT * FROM user_form WHERE uname='$uname' AND password='$pass' LIMIT 1";
+    // Fetch user details from the database
+    $login_query = "SELECT * FROM user_form WHERE email='$uname' LIMIT 1";
     $run_login = mysqli_query($conn, $login_query);
 
     if (mysqli_num_rows($run_login) > 0) {
         $userdata = mysqli_fetch_array($run_login);
-        
-        if ($userdata['is_ban']) {
-            $_SESSION['status'] = "Your account has been banned. Please contact the administrator.";
+
+        // Check if password is correct using password_verify
+        if (password_verify($pass, $userdata['password'])) {
+
+            // Check if the user is banned
+            if ($userdata['is_ban']) {
+                $_SESSION['status'] = "Your account has been banned. Please contact the administrator.";
+                header('Location: login.php');
+                exit(0);
+            }
+
+            // Set session variables based on user role
+            $_SESSION['auth'] = true; // For admin and user session
+            $_SESSION['auth_role'] = $userdata['roles_as'];
+
+            $_SESSION['auth_user'] = [
+                'user_id' => $userdata['id'],
+                'user_name' => $userdata['fname'] . ' ' . $userdata['lname'],
+                'user_email' => $userdata['email'], // Updated to 'email' to match column name
+                'user_image' => $userdata['image'],
+            ];
+
+            // Redirect based on user role
+            if ($_SESSION['auth_role'] == 'admin') {
+                $_SESSION['message'] = "Welcome to the dashboard";
+                header('Location: index.php');
+                exit(0);
+            } elseif ($_SESSION['auth_role'] == 'user') {
+                $_SESSION['message'] = "You are logged in";
+                header('Location: user-dash.php');
+                exit(0);
+            }
+        } else {
+            $_SESSION['message'] = "Invalid email or password";
             header('Location: login.php');
-            exit(0);
-        }
-
-        $_SESSION['auth'] = true; // For admin and user session
-        $_SESSION['auth_role'] = $userdata['roles_as'];
-        
-        $_SESSION['auth_user'] = [
-            'user_id' => $userdata['id'],
-            'user_name' => $userdata['fname'] . ' ' . $userdata['lname'],
-            'user_email' => $userdata['uname'],
-            'user_image' => $userdata['image'],
-        ];
-
-        if ($_SESSION['auth_role'] == 'admin') {
-            $_SESSION['message'] = "Welcome to the dashboard";
-            header('Location: index.php');
-            exit(0);
-        } elseif ($_SESSION['auth_role'] == 'user') {
-            $_SESSION['message'] = "You are logged in";
-            header('Location: user-dash.php');
             exit(0);
         }
     } else {

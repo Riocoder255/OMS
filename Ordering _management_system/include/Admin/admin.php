@@ -44,7 +44,7 @@ require_once "admin_connect.php";
                             <table class="table table-hover" id="dataTable" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
-                                           
+                                    <th>#</th>
                                             <th>avatar</th>
                                         <th>firstname</th>
                                         <th>Lastname</th>
@@ -79,7 +79,7 @@ require_once "admin_connect.php";
                                     <td><img src="Uploads/<?= $userItem['image'] ?>" width="70px;" height="70px;" alt="Image"></td>
                                     <td><?= $userItem['fname'] ?></td>
                                     <td><?= $userItem['lname'] ?></td>
-                                    <td><?= $userItem['uname'] ?></td>
+                                    <td><?= $userItem['email'] ?></td>
                                     <td><?= $userItem['phone'] ?></td>
                                     <td><?= $userItem['branch_name'] ?></td> <!-- Display the branch name -->
                                     <td><?= $userItem['roles_as'] ?></td>

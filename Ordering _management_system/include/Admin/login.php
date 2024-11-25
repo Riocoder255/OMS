@@ -56,7 +56,7 @@ if(isset($_SESSION['auth']))
         <input type="password"name="pass" placeholder="Password" class="info" >
             
         <button type="submit"  name="login_btn">Login </button>
-        <a href="./forgot_password.php">Forgot <span>Password</span></a>
+        <a href="Send_email.php">Forgot <span>Password</span></a>
 
       </form>
 </body>

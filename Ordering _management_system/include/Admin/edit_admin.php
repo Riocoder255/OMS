@@ -102,7 +102,7 @@ include './admin_connect.php';
                         </div>
                         <div class="col">
                     <label for=""class="text-dark"><i class="fas fa-user"></i> Username</label>
-                    <input type="text"class="form-control" name="uname"value="<?= $user['data']['uname'];?>">
+                    <input type="text"class="form-control" name="uname"value="<?= $user['data']['email'];?>">
 
 
                     </div>

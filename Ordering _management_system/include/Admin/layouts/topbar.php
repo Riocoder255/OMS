@@ -39,13 +39,10 @@ if (mysqli_num_rows($result) > 0) {
             <label for="lname">Last Name</label>
             <input type="text" class="form-control" name="lname" value="<?= $user['lname']; ?>" required>
           </div>
-          <div class="form-group mb-2">
-            <label for="uname">Username</label>
-            <input type="text" class="form-control" name="uname" value="<?= $user['uname']; ?>" required>
-          </div>
+          
           <div class="form-group mb-2">
             <label for="email">Email</label>
-            <input type="email" class="form-control" name="email" value="<?= $user['uname']; ?>" required>
+            <input type="email" class="form-control" name="email" value="<?= $user['email']; ?>" required>
           </div>
           <div class="form-group mb-2">
             <label for="password">Password</label>

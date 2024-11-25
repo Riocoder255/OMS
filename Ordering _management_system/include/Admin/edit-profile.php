@@ -6,7 +6,7 @@ if (isset($_POST['update_profile'])) {
     $user_id = $_SESSION['auth_user']['user_id'];
     $fname = mysqli_real_escape_string($conn, $_POST['fname']);
     $lname = mysqli_real_escape_string($conn, $_POST['lname']);
-    $uname = mysqli_real_escape_string($conn, $_POST['uname']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
     $password = mysqli_real_escape_string($conn, md5($_POST['password']));
     $new_image = $_FILES['image']['name'];
     $old_image = $_POST['image_old'];
@@ -22,7 +22,7 @@ if (isset($_POST['update_profile'])) {
         $image = $old_image;
     }
 
-    $query = "UPDATE user_form SET fname='$fname', lname='$lname', uname='$uname', password='$password', image='$image' WHERE id='$user_id'";
+    $query = "UPDATE user_form SET fname='$fname', lname='$lname', email='$email', password='$password', image='$image' WHERE id='$user_id'";
     $result = mysqli_query($conn, $query);
 
     if ($result) {

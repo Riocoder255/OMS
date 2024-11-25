@@ -39,7 +39,7 @@ if (isset($_POST['save_data'])) {
         redirect('insert_admin.php', "admin/user is already taken try another");
     } else {
 
-        $query = "INSERT INTO user_form( fname, lname , phone ,branch_id,uname , password, roles_as ,image,is_ban)VALUES('$name','$lname','$phone','$branch_id','$uname','$pass','$roles_as','$image','$is_ban')";
+        $query = "INSERT INTO user_form( fname, lname , phone ,branch_id,email , password, roles_as ,image,is_ban)VALUES('$name','$lname','$phone','$branch_id','$uname','$pass','$roles_as','$image','$is_ban')";
 
         $sql_run = mysqli_query($conn, $query);
         if ($sql_run) {
@@ -89,7 +89,7 @@ if (isset($_POST['update_data'])) {
         $query = "UPDATE user_form SET 
             fname = '$name',
             lname = '$lname',
-            uname = '$uname',
+            email = '$uname',
             phone = '$phone',
             branch_id = '$branch',
             password = '$pass',
