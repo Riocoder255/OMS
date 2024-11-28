@@ -29,7 +29,7 @@ require_once "admin_connect.php";
 <body>
     
 <div class="container">
-    <button class=" btn btn-light" >OTC</button> <button class=" btn btn-light">Gcash</button>
+    <button class=" btn btn-light" >Downpayment</button> <button class=" btn btn-light">Fullcash payment</button>
 </div>
 </body>
 </html>

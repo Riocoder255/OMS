@@ -40,8 +40,9 @@
            <?php  }?>
         <input type="text" name="email" placeholder="Email address" class="info" >
         <input type="password"name="pass" placeholder="Password" class="info" >
-
+         
         <button type="submit">Sign in</button>
+        <a href="./signup.php">forgot<span> password</span></a><br>
         <a href="./signup.php">Don't have an Account?<span> Sign up</span></a>
       </form>
 </body>

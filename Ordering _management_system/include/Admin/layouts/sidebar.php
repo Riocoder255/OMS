@@ -118,7 +118,7 @@
 
                         <a href="product_price.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Product</a>
 
-
+                        <a href="pricing.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Pricing</a>
                         <a href="branch.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Branch</a>
                 <a href="category.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Category</a>
                 <a href="size.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
@@ -140,7 +140,7 @@
   </a>
   <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
     <li><a class="dropdown-item" href="payment.php">Payment Type</a></li>
-    <li><a class="dropdown-item" href="payment-history.php">Payment method</a></li>
+    <li><a class="dropdown-item" href="Payment_method.php">Payment method</a></li>
   
   </ul>
 </div>
@@ -154,7 +154,7 @@
                             
                             <a href="Sales.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Inventory</a>
                             
-                            <a href="Sales.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Calendar Event</a>
+                            <a href="Calendar_event.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Calendar Event</a>
                             
                             <a href="Sales.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Feedback</a>
                             <a href="Sales.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold"> Report</a>

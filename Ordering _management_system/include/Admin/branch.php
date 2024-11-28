@@ -85,7 +85,7 @@ require_once "admin_connect.php";
                     <td><?= $count ?></td>
                     <td><?= $catItem ['Branch_name'];?></td>
                     <td>
-                     style="width:100px; height:auto;">
+                    <img src="design_upload/<?= htmlspecialchars($catItem['map_image']); ?>" alt="Branch Image" style="width:100px; height:auto;">
             </td>
 
 

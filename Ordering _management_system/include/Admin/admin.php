@@ -48,14 +48,14 @@ require_once "admin_connect.php";
                                             <th>avatar</th>
                                         <th>firstname</th>
                                         <th>Lastname</th>
-                                        <th>Username</th>
+                                        <th>Email</th>
                                         <th>Phone</th>
-                                        <th>Assigned branch</th>
-                                        <th>Roles</th>
-                                        <th>Created_at</th>
+                                        <th>Assigned Branch</th>
+                                        <th>Role</th>
+                                        <th>Date Register</th>
                                         <th>Status</th>
                                         <th>Edit</th>
-                                        <th>delete</th>
+                                        <th>Delete</th>
 
                                     </tr>
                                 </thead>

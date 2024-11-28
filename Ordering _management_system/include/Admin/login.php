@@ -52,7 +52,7 @@ if(isset($_SESSION['auth']))
             include './message.php';
           ?>
          
-        <input type="text" name="uname" placeholder="Email address" class="info" >
+        <input type="email" name="uname" placeholder="Email " class="info" >
         <input type="password"name="pass" placeholder="Password" class="info" >
             
         <button type="submit"  name="login_btn">Login </button>

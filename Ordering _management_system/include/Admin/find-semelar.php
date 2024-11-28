@@ -10,7 +10,7 @@ if (isset($_GET['product_id'])) {
 
   // Join query to fetch product details along with sizes and concatenated images
   $qry = mysqli_query($conn, "
-  SELECT pp.product_id, pp.product_name, pp.cover, pp.price, pp.product_sale, ps.size_id, s.Size, ps.color_id, c.color_name, ps.images
+  SELECT pp.product_id, pp.product_name, pp.cover, ps.size_id, s.Size, ps.color_id, c.color_name, ps.images
   FROM product_price pp
   JOIN product_size ps ON pp.product_id = ps.product_id
   JOIN sizing s ON ps.size_id = s.id
@@ -454,8 +454,8 @@ if (isset($_GET['product_id'])) {
             </div>
             <div class="sep-rate">
 
-              <p class="discount"><del> <?php echo$res['product_sale'] ?> </del></p>
-              <p class="price"> ₱  <?php  echo $res['price']; ?></p>
+             
+            
 
 
             </div>
