@@ -5,6 +5,8 @@ include('./function.php');
 if (isset($_POST['product_btn'])) {
     $cat_id = $_POST['cat_id'];
     $product_name = $_POST['product_name'];
+    $sizes =$_POST['sizes'];
+
     
 
     // Handle file uploads
@@ -28,7 +30,7 @@ if (isset($_POST['product_btn'])) {
         move_uploaded_file($_FILES['cover']['tmp_name'], "product_upload/$cover");
 
         // Insert product into product_price table
-        $query = "INSERT INTO product_price(category_id, product_name,  cover)
+        $query = "INSERT INTO product_price(price_id ,product_name,  cover )
                   VALUES('$cat_id', '$product_name',  '$cover')";
         $sql_run = mysqli_query($conn, $query);
 
@@ -38,12 +40,12 @@ if (isset($_POST['product_btn'])) {
 
             // Insert sizes and colors
             foreach ($sizes as $size_id) {
-                foreach ($colors as $color_id) {
+              
                     foreach ($image_names as $image_name) {
-                        $size_query = "INSERT INTO product_size (product_id, size_id, color_id, images) VALUES ('$product_id', '$size_id', '$color_id', '$image_name')";
+                        $size_query = "INSERT INTO product_size (product_id, size_id,  images) VALUES ('$product_id', '$size_id',  '$image_name')";
                         mysqli_query($conn, $size_query);
                     }
-                }
+                
             }
 
             redirect('product_price.php', "Product and sizes added successfully");
@@ -58,48 +60,105 @@ if (isset($_POST['product_btn'])) {
 
 // Include your database connection
 
+
+
 if (isset($_POST['update_product'])) {
-    // Fetch form data
-    $product_id = mysqli_real_escape_string($conn, $_POST['product_id']);
-    $category_id = mysqli_real_escape_string($conn, $_POST['cat_id']);
-    $product_name = mysqli_real_escape_string($conn, $_POST['p_name']);
-    $size_id = mysqli_real_escape_string($conn, $_POST['size_id']);
-    $dated = mysqli_real_escape_string($conn, $_POST['dated']);
-    $image_old = mysqli_real_escape_string($conn, $_POST['image_old']);
+    $product_id = $_POST['product_id'];
+    $cat_id = $_POST['cat_id'];
+    $p_name = $_POST['p_name'];
+    $dated = $_POST['dated'];
+    $old_image = $_POST['image_old'];
 
-    // Handle image upload
-    $image_new = $_FILES['cover']['name'];
-    $image_temp = $_FILES['cover']['tmp_name'];
+    // Handle cover image upload
+    $new_image = $_FILES['cover']['name'];
+    $upload_dir = "product_upload/";
 
-    // If a new image is uploaded, use it; otherwise, keep the old image
-    if (!empty($image_new)) {
-        $image_path = "product_upload/" . $image_new;
-        move_uploaded_file($image_temp, $image_path);
+    if ($new_image != "") {
+        // Check if the file already exists
+        if (file_exists($upload_dir . $new_image)) {
+            echo "<script>alert('Image already exists in the folder. Please upload a different image.');</script>";
+            echo "<script>window.location.href='./product_price.php';</script>";
+            exit();
+        } else {
+            // Move the uploaded file to the target directory
+            $image_path = $upload_dir . basename($new_image);
+            if (move_uploaded_file($_FILES['cover']['tmp_name'], $image_path)) {
+                // If the upload is successful, delete the old image (optional)
+                if (file_exists($upload_dir . $old_image)) {
+                    unlink($upload_dir . $old_image);
+                }
+            } else {
+                echo "<script>alert('Error uploading cover image.');</script>";
+                echo "<script>window.location.href='./product_price.php';</script>";
+                exit();
+            }
+        }
     } else {
-        $image_path = $image_old;
+        // If no new cover image is uploaded, keep the old image
+        $new_image = $old_image;
     }
 
-    // Update query
-    $query = "
-        UPDATE product_price 
-        SET 
-            category_id = '$category_id',
-            product_name = '$product_name',
-            size_id = '$size_id',
-            created = '$dated',
-            cover = '$image_path'
-        WHERE 
-            product_id = '$product_id'
-    ";
+    // Handle design image upload (for additional images)
+    $upload_dir_design = "design_upload/";
+
+    // Check if images are uploaded and process each one
+    if (!empty($_FILES['images']['name'][0])) { // Check if files are uploaded
+        foreach ($_FILES['images']['name'] as $key => $design_image) {
+            // Ensure the file name is not empty
+            if ($design_image != "") {
+                $design_image_path = $upload_dir_design . basename($design_image);
+                // Check if the design image already exists
+                if (file_exists($design_image_path)) {
+                    echo "<script>alert('Design image already exists. Please upload a different image.');</script>";
+                    echo "<script>window.location.href='./product_price.php';</script>";
+                    exit();
+                } else {
+                    // Move the uploaded design image to the target directory
+                    if (move_uploaded_file($_FILES['images']['tmp_name'][$key], $design_image_path)) {
+                        // Optionally, you can delete the old image if required
+                    } else {
+                        echo "<script>alert('Error uploading design image.');</script>";
+                        echo "<script>window.location.href='./product_price.php';</script>";
+                        exit();
+                    }
+                }
+            }
+        }
+    }
+
+    // Update product in the product_price table
+    $query = "UPDATE product_price SET 
+                price_id = '$cat_id',
+                product_name = '$p_name',
+                created = '$dated',
+                cover = '$new_image'
+              WHERE product_id = '$product_id'";
 
     if (mysqli_query($conn, $query)) {
-        // Redirect or display a success message
-        echo "<script>alert('Product updated successfully!');</script>";
+        // Update product sizes in the product_size table
+        if (isset($_POST['sizes'])) {
+            $sizes = $_POST['sizes']; // Assuming sizes are passed as an array
+
+            // Delete existing sizes for this product
+            $delete_sizes_query = "DELETE FROM product_size WHERE product_id = '$product_id'";
+            mysqli_query($conn, $delete_sizes_query);
+
+            // Insert the new sizes into the product_size table
+            foreach ($sizes as $size_id) {
+                // Insert each size with the product
+                $insert_size_query = "INSERT INTO product_size (product_id, size_id, images) 
+                                      VALUES ('$product_id', '$size_id', '$design_image')";
+                mysqli_query($conn, $insert_size_query);
+            }
+        }
+
+        echo "<script>alert('Product updated successfully.');</script>";
         echo "<script>window.location.href='./product_price.php';</script>";
     } else {
-        echo "Error updating product: " . mysqli_error($conn);
+        echo "<script>alert('Error updating product.');</script>";
+        echo "<script>window.location.href='./product_price.php';</script>";
     }
 }
 ?>
 
-?>
+

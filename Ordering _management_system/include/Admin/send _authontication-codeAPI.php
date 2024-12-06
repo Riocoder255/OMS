@@ -38,8 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->Body    = "Your OTP code is: <strong>$otp</strong>";
         $mail->isHTML(true);
         $mail->Subject = 'Your OTP Code';
-        $mail->Body    = "Your OTP code is: <strong>$otp</strong><br><br>
-                          <a href='https://example.com/OTP_Verification.php?otp=$otp' target='_blank'>Click here to verify your OTP</a>";
+        
 
         // Send the email
         $mail->send();

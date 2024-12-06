@@ -3,50 +3,60 @@ include_once "./admin_connect.php";
 include_once "./function.php";
 
 if (isset($_POST['save_data'])) {
-    $name =   validated($_POST['fname']);
+    $name = validated($_POST['fname']);
     $lname = validated($_POST['lname']);
     $phone = validated($_POST['phone']);
     $branch_id = validated($_POST['branch_id']);
     $uname = validated($_POST['uname']);
     $pass = validated($_POST['password']);
     $roles_as = validated($_POST['roles_as']);
-    $image = validated($_FILES['image']['name']);
-    $is_ban = validated($_POST['is_ban']) == true ? 1 : 0;
+    $image = $_FILES['image']['name'];
+    $is_ban = isset($_POST['is_ban']) && $_POST['is_ban'] == "true" ? 1 : 0;
 
-
-
+    // Validate input fields
     if (empty($name)) {
-        direct('insert_admin.php', "firstname can't be blank");
+        redirect('insert_admin.php', "First name can't be blank");
     } else if (empty($lname)) {
-        direct('insert_admin.php', "lastname can't be blank");
+        redirect('insert_admin.php', "Last name can't be blank");
     } else if (empty($uname)) {
-        direct('insert_admin.php', "Username can't be blank");
+        redirect('insert_admin.php', "Username can't be blank");
     } else if (empty($pass)) {
-        direct('insert_admin.php', "Password can't be blank");
+        redirect('insert_admin.php', "Password can't be blank");
     } else if (empty($roles_as)) {
-        direct('insert_admin.php', "select role can't be blank");
+        redirect('insert_admin.php', "Select role can't be blank");
     } else if (empty($image)) {
-        direct('insert_admin.phpp', "image can't be blank");
-    } else if (file_exists("Uploads/" . $_FILES["image"]["name"])) {
-        $store = $_FILES["image"]["name"];
+        redirect('insert_admin.php', "Image can't be blank");
+    } else if (file_exists("Uploads/" . $image)) {
+        redirect('insert_admin.php', "Image already exists: $image");
+    }
 
-        redirect('insert_admin.php', "Image already exists. '.$store.'");
-    } else
-        $pass = md5($pass);
-    $sql = "SELECT * FROM user_form where uname ='$uname'";
-    $sql_run = mysqli_query($conn, $sql);
-    if (mysqli_num_rows($sql_run) > 0) {
-        redirect('insert_admin.php', "admin/user is already taken try another");
+    // Hash password
+    $hashed_password = password_hash($pass, PASSWORD_BCRYPT);
+
+    // Check if username/email already exists
+    $sql = "SELECT * FROM user_form WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $uname);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        redirect('insert_admin.php', "Admin/user is already taken. Try another.");
     } else {
+        // Insert user into the database
+        $query = "INSERT INTO user_form (fname, lname, phone, branch_id, email, password, roles_as, image, is_ban) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssssssssi", $name, $lname, $phone, $branch_id, $uname, $hashed_password, $roles_as, $image, $is_ban);
 
-        $query = "INSERT INTO user_form( fname, lname , phone ,branch_id,email , password, roles_as ,image,is_ban)VALUES('$name','$lname','$phone','$branch_id','$uname','$pass','$roles_as','$image','$is_ban')";
-
-        $sql_run = mysqli_query($conn, $query);
-        if ($sql_run) {
-            move_uploaded_file($_FILES["image"]["tmp_name"], "Uploads/" . $_FILES["image"]["name"]);
-            redirect('insert_admin.php', "admin/user Addedd successfully");
+        if ($stmt->execute()) {
+            // Move uploaded file
+            if (move_uploaded_file($_FILES["image"]["tmp_name"], "Uploads/" . $image)) {
+                redirect('insert_admin.php', "Admin/user added successfully.");
+            } else {
+                redirect('insert_admin.php', "Failed to upload image.");
+            }
         } else {
-            redirect("admin.php", '');
+            redirect('insert_admin.php', "Database error. Please try again.");
         }
     }
 }
@@ -125,5 +135,7 @@ if (isset($_POST['update_data'])) {
         redirect('edit_admin.php', 'Please fill out the data');
     }
 }
+
+?>
 
 

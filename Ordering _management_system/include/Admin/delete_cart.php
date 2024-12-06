@@ -1,24 +1,35 @@
-<?php
-session_start();
-require './admin_connect.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $cart_key = $_POST['cart_key'];
+// Replace with your database connection file
+<?
+if (!isset($_SESSION['user_id'])) {
+    die("Please log in to continue.");
+}
 
-    // Get product_id, size_id, and color_id from the cart key
-    list($product_part, $color_id) = explode('-', $cart_key);
-    list($product_id, $size_id) = explode('_', $product_part);
+// Get the cart ID from the URL
+if (isset($_GET['id'])) {
+    $cart_id = intval($_GET['id']); // Sanitize input
 
-    // Remove the item from the session cart
-    unset($_SESSION['cart'][$cart_key]);
+    // Prepare the SQL query to delete the item from the cart
+    $stmt = $conn->prepare("DELETE FROM cart WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $cart_id, $_SESSION['user_id']); // Bind parameters
 
-    // Delete the item from the database
-    $stmt = $conn->prepare("DELETE FROM cart WHERE user_id = ? AND product_id = ? AND size_id = ? AND color_id = ?");
-    $stmt->bind_param('iiii', $_SESSION['user_id'], $product_id, $size_id, $color_id);
-    $stmt->execute();
-
-    $_SESSION['status'] = "Item removed from cart successfully";
-    header("Location: cart_view.php");
-    exit();
+    if ($stmt->execute()) {
+        // Redirect back to the cart page with a success message
+        echo '<script type="text/javascript">
+            Swal.fire({
+                title: "Deleted!",
+                text: "The item has been removed from your cart.",
+                icon: "success",
+                confirmButtonText: "OK"
+            }).then(() => {
+                window.location.href = "cart_page.php"; // Replace with your cart page URL
+            });
+        </script>';
+    } else {
+        echo "Error deleting item: " . $stmt->error;
+    }
+    $stmt->close();
+} else {
+    echo "Invalid request.";
 }
 ?>

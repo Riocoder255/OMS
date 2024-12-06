@@ -39,18 +39,18 @@ if (isset($_POST['email']) && isset($_POST['pass'])) {
                 $stmt->execute();
                 $result = $stmt->get_result();
                 // Retrieve cart data from the database
-                $stmt = $conn->prepare("SELECT product_id, size_id, color_id, quantity FROM cart WHERE user_id = ?");
+                $stmt = $conn->prepare("SELECT product_id, cartsize,  quantity FROM cart WHERE user_id = ?");
                 $stmt->bind_param('i', $row['user_id']);
                 $stmt->execute();
                 $result = $stmt->get_result();
 
                 $_SESSION['cart'] = [];
                 while ($cart_row = $result->fetch_assoc()) {
-                    $cart_item_key = $cart_row['product_id'] . '_' . $cart_row['size_id'] . '-' . $cart_row['color_id'];
+                    $cart_item_key = $cart_row['product_id'] . '_' . $cart_row['cartsize'] ;
                     $_SESSION['cart'][$cart_item_key] = [
                         'product_id' => $cart_row['product_id'],
-                        'size_id' => $cart_row['size_id'],
-                        'color_id' => $cart_row['color_id'],
+                        'cartsize' => $cart_row['cartsize'],
+                      
                         'quantity' => $cart_row['quantity']
                     ];  
                 }

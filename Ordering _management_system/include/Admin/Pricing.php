@@ -26,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Update existing record
         $id = $_POST["id"];
 
-        $stmt = $conn->prepare("UPDATE pricing SET category_id = ?, quantity = ?, price = ?, freebie = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE pricing SET category_name = ?, quantity = ?, price = ?, freebie = ? WHERE id = ?");
         $stmt->bind_param("sssss", $category, $quantity, $price, $freebie, $id);
 
         if ($stmt->execute()) {
@@ -38,7 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->close();
     } else {
         // Insert new record
-        $stmt = $conn->prepare("INSERT INTO pricing (category_id, quantity, price, freebie) VALUES (?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO pricing (category_name, quantity, price, freebie) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("ssss", $category, $quantity, $price, $freebie);
 
         if ($stmt->execute()) {
@@ -156,18 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <form method="POST" action="">
 
 <label for="category">Category</label>
-<select id="category" name="category">
-    <?php
-    // Fetch categories
-    $query = "SELECT * FROM Sub_category";
-    $query_run = mysqli_query($conn, $query);
-    if (mysqli_num_rows($query_run) > 0) {
-        while ($row = mysqli_fetch_array($query_run)) {
-            echo "<option value='{$row['id']}'>{$row['cat_name']}</option>";
-        }
-    }
-    ?>
-</select>
+<input type="text"  name="category" id="category">
 
 <!-- Input Rows -->
 <div class="form-row">
@@ -202,13 +191,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
            
 <?php
         // Fetch items from the database
-        $query = "SELECT p.*, c.cat_name 
-        FROM pricing p 
-        LEFT JOIN sub_category c ON p.category_id = c.id";// Replace with your actual table name
+        $query = "SELECT *
+        FROM pricing  
+          ";// Replace with your actual table name
         $query_run = mysqli_query($conn, $query);
         while ($row = mysqli_fetch_array($query_run)) {
             echo "<tr class='editRow' data-id='{$row['id']}'>
-                    <td>{$row['cat_name']}</td>
+                    <td>{$row['category_name']}</td>
                     <td>{$row['quantity']}</td>
                     <td>{$row['price']}</td>
                     <td>{$row['freebie']}</td>
@@ -235,14 +224,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         btn.addEventListener('click', function() {
             const row = this.closest('tr');
             const id = row.getAttribute('data-id');
-            const category = row.cells[0].textContent;
+            const category_name = row.cells[0].textContent;
             const quantity = row.cells[1].textContent;
             const price = row.cells[2].textContent;
             const freebie = row.cells[3].textContent;
 
             // Set the form fields with the data
             document.querySelector('input[name="id"]').value = id;
-            document.querySelector('select[name="category"]').value = category;
+            document.querySelector('input[name="category"]').value = category_name;
             document.querySelector('input[name="quantity"]').value = quantity;
             document.querySelector('input[name="price"]').value = price;
             document.querySelector('input[name="freebie"]').value = freebie;

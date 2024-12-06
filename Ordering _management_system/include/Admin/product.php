@@ -50,11 +50,11 @@ if (mysqli_num_rows($query_run) > 0) {
                         <select class="form-select form-select-lg mb-3" aria-label="Large select example" name="cat_id">
                             <option selected>Select Sub Category</option>
                             <?php
-                            $query = "SELECT * FROM Sub_category";
+                            $query = "SELECT * FROM pricing";
                             $query_run = mysqli_query($conn, $query);
                             if (mysqli_num_rows($query_run) > 0) {
                                 while ($row = mysqli_fetch_array($query_run)) {
-                                    echo "<option value='{$row['id']}'>{$row['cat_name']}</option>";
+                                    echo "<option value='{$row['id']}'>{$row['category_name']}</option>";
                                 }
                             }
                             ?>
@@ -86,11 +86,12 @@ if (mysqli_num_rows($query_run) > 0) {
                 <div class="row">
                     
                     <div class="col">
+                        <label for="">Product_image</label>
                         <input type="file" class="form-control" placeholder="Price" aria-label="Last name" name="cover">
                     </div>
 
                   
-
+                    <label for="">Product_Design</label>
                     <div class="col">
                         <input type="file" class="form-control" placeholder="Product_sales" aria-label="First name"name="image[]"multiple>
                     </div>

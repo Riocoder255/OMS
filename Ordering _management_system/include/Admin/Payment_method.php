@@ -1,46 +1,23 @@
 <?php
-require "layouts/header.php";
-require 'layouts/sidebar.php';
-require 'layouts/topbar.php';
 
+// PayMongo Webhook secret (from your PayMongo account settings)
+$webhook_secret = 'sk_test_viqjbEWMc5ht6zB69HEweMSB';
 
+// Get payload and signature from PayMongo
+$payload = file_get_contents('php://input');
+$headers = getallheaders();
+$signature = $headers['Paymongo-Signature'] ?? '';
 
-require_once "admin_connect.php";
+if ($signature && hash_equals($webhook_secret, $signature)) {
+    $event = json_decode($payload, true);
 
+    if ($event['data']['attributes']['status'] === 'succeeded') {
+        $amount = $event['data']['attributes']['amount'] / 100; // Convert from cents to PHP
+        $payment_method = $event['data']['attributes']['payment_method_type'];
 
-
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<style>
-    button { 
-        width:20%;
-        height: 20%;
-        margin-top: 100px;
-        margin-left: 20%;
-      
+        // Update your database with the payment status
+        file_put_contents('payment_logs.txt', "Payment succeeded: ₱{$amount} via {$payment_method}\n", FILE_APPEND);
     }
-</style>
-<body>
-    
-<div class="container">
-    <button class=" btn btn-light" >Downpayment</button> <button class=" btn btn-light">Fullcash payment</button>
-</div>
-</body>
-</html>
-    
-
-
-
-<?php
-
-include("./layouts/footer.php");
-
-include("./layouts/scripts.php");
-
+}
 ?>
+

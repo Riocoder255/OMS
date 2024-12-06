@@ -6,47 +6,181 @@
 
 
 if (isset($_GET['product_id'])) {
-  $product_id = $_GET['product_id'];
+  $id = $_GET['product_id'];
 
   // Join query to fetch product details along with sizes and concatenated images
-  $qry = mysqli_query($conn, "
-  SELECT pp.product_id, pp.product_name, pp.cover, ps.size_id, s.Size, ps.color_id, c.color_name, ps.images
-  FROM product_price pp
-  JOIN product_size ps ON pp.product_id = ps.product_id
-  JOIN sizing s ON ps.size_id = s.id
-  JOIN colors c ON ps.color_id = c.id
-  WHERE pp.product_id = '$product_id'
+  $qry = mysqli_query($conn, "SELECT DISTINCT
+        product_price.*, 
+        pricing.*, 
+        product_size.product_id, 
+
+        product_size.images
+        
+       
+    FROM 
+        product_price
+    INNER JOIN 
+        pricing ON product_price.price_id = pricing.id
+    INNER JOIN 
+        product_size ON product_price.product_id = product_size.product_id
+     
+
+    WHERE 
+        product_price.product_id = '$id';
   ");
 
-  $product_details = [];
-  $sizes = [];
-  $unique_sizes = [];
-  $colors = [];
-  $unique_colors = [];
-  $unique_images = [];
+  $image_unique = [];
+$size= [];
 
-  while ($row = mysqli_fetch_assoc($qry)) {
-      $product_details[] = $row;
-      if (!in_array($row['size_id'], $unique_sizes)) {
-          $unique_sizes[] = $row['size_id'];
-          $sizes[] = $row;
-      }
-   
+  $product_details = [];
+    while ($row = mysqli_fetch_assoc($qry)) {
+        $image_unique [] = $row;
+        $size [] = $row;
       // Process images and ensure uniqueness
-      $images = explode(',', $row['images']);
-      foreach ($images as $image) {
-          if (!in_array($image, $unique_images)) {
-              $unique_images[] = $image;
-          }
-      }
+     
+      
   }
 
   // Fetch product details separately for display
-  $product_qry = mysqli_query($conn, "SELECT * FROM product_price WHERE product_id = '$product_id'");
-  $res = mysqli_fetch_assoc($product_qry);
-}
-?>
+  $product_qry = mysqli_query($conn, "SELECT DISTINCT
+    p.*, 
+    pc.*
+    
+FROM 
+    product_price p
+JOIN 
+    pricing  pc
+ON 
+    p.price_id = pc.id
+  WHERE p.product_id = '$id'
+    ");
+$res = mysqli_fetch_assoc($product_qry);
 
+;
+}
+
+
+
+// Check if the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    die("User not logged in.");
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+  // Retrieve and sanitize inputs
+  $product_id = intval($_POST['product_id']);
+  $size = isset($_POST['Size']) ? trim($_POST['Size']) : null;
+  $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+  $productsize_id = isset($_POST['productsize_id']) ? htmlspecialchars($_POST['productsize_id']) : null;
+  $action = $_POST['action'];
+
+  // Validation
+  if (empty($size)) {
+      echo '<script type="text/javascript">
+          Swal.fire({ text: "Oops! Please select a size.", icon: "error", confirmButtonText: "OK" })
+          .then(() => { window.history.back(); });
+      </script>';
+      exit(0);
+  }
+  if (empty($productsize_id)) {
+      echo '<script type="text/javascript">
+          Swal.fire({ text: "Oops! Please select an image.", icon: "error", confirmButtonText: "OK" })
+          .then(() => { window.history.back(); });
+      </script>';
+      exit(0);
+  }
+
+  // Fetch the product price
+  $qry = mysqli_query($conn, "SELECT price FROM pricing WHERE id ");
+  if (!$qry || !($row = mysqli_fetch_assoc($qry))) {
+      die("Error fetching product price or product not found.");
+  }
+  $price = $row['price'];
+  $total_price = $price * $quantity;
+
+  // Check if the product, size, and image already exist in the cart
+  $user_id = $_SESSION['user_id']; // Assuming session has the user ID
+  $check_cart = mysqli_query($conn, "SELECT id, quantity FROM cart WHERE user_id = '$user_id' AND product_id = '$product_id' AND cartsize = '$size' AND image_path = '$productsize_id'");
+
+  if ($check_cart && mysqli_num_rows($check_cart) > 0) {
+      // If the item already exists, update the quantity
+      $existing_item = mysqli_fetch_assoc($check_cart);
+      $new_quantity = $existing_item['quantity'] + $quantity; // Increase the quantity
+      $cart_id = $existing_item['id'];
+
+      // Update the cart quantity and total price
+      $update_stmt = $conn->prepare("UPDATE cart SET quantity = ?, price = ? WHERE id = ?");
+      if (!$update_stmt) {
+          die("Error preparing statement: " . $conn->error);
+      }
+      $update_stmt->bind_param("idi", $new_quantity, $total_price, $cart_id);
+
+      if ($update_stmt->execute()) {
+          echo '<script type="text/javascript">
+              Swal.fire({
+                  title: "Updated Cart!",
+                  text: "The quantity of your item has been updated.",
+                  icon: "success",
+                  confirmButtonText: "OK"
+              }).then((result) => {
+                  if (result.isConfirmed) {
+                      window.location.href = "find-semelar.php?product_id=' . $product_id . '"; // Redirect to product page
+                  }
+              });
+          </script>';
+      } else {
+          echo "Error updating cart: " . $update_stmt->error;
+      }
+      $update_stmt->close();
+  } else {
+      // If the item does not exist in the cart, insert a new record
+      $stmt = $conn->prepare("INSERT INTO cart (user_id, product_id, cartsize, quantity, price, image_path) 
+                              VALUES (?, ?, ?, ?, ?, ?)");
+      if (!$stmt) {
+          die("Error preparing statement: " . $conn->error);
+      }
+
+      $stmt->bind_param("iisids", $user_id, $product_id, $size, $quantity, $total_price, $productsize_id);
+
+      if ($stmt->execute()) {
+          if ($action === 'buy_now') {
+            echo '<script type="text/javascript">
+            Swal.fire({
+                title: "Added to Cart!",
+                text: "Your item has been successfully added to the cart.",
+                icon: "success",
+                confirmButtonText: "OK"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "cart_view.php"; 
+                }
+            });
+        </script>'; // Redirect to checkout if 'buy now' is selected
+              exit;
+          } else {
+              echo '<script type="text/javascript">
+                  Swal.fire({
+                      title: "Added to Cart!",
+                      text: "Your item has been successfully added to the cart.",
+                      icon: "success",
+                      confirmButtonText: "OK"
+                  }).then((result) => {
+                      if (result.isConfirmed) {
+                          window.location.href = "find-semelar.php?product_id=' . $product_id . '"; 
+                      }
+                  });
+              </script>';
+          }
+      } else {
+          echo "Error: " . $stmt->error;
+      }
+      $stmt->close();
+  }
+}
+
+
+
+?>
  
 
   <!DOCTYPE html>
@@ -57,346 +191,7 @@ if (isset($_GET['product_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
   </head>
-  <style>
-    .size {
-      width: 14%;
-
-      position: absolute;
-    }
-
-    #ImgDl .modal-header {
-      padding: 0;
-
-    }
-
-    #ImgDl .modal-body {
-      padding: 0;
-    }
-
-    #imgDl .modal-header .close {
-      position: absolute;
-    }
-
-    #imgDl .modal-body .img-fluid {
-      border-radius: 5px;
-      width: 100px;
-    }
-
-    .button {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-left: 50%;
-
-    }
-
-    .buy {
-      margin-left: 10px;
-    }
-
-    .quantity {
-      width: 140px;
-      margin-left: 210%;
-      margin-top: 20px;
-    }
-
-    .size-chart {
-      margin-left: 55%;
-      border: 1px solid lightgray;
-      width: 100px;
-
-    }
-
-    .size-chart a {
-      color: black;
-      text-decoration: none;
-    }
-
-
-    .wrapper-1 {
-      width: 500px;
-      margin-top: -120px;
-
-
-    }
-
-    .wrapper-1 .title h4 {
-      font-size: 24px;
-      color: #000;
-      font-weight: 700;
-      text-align: center;
-      margin-left: -70%;
-      margin-top: 140px;
-    }
-
-    .container {
-      padding-left: 10px;
-
-
-
-    }
-
-    .container .option_item {
-
-      display: flex;
-      position: relative;
-      width: 150px;
-      height: 30px;
-      margin: 10px;
-
-
-    }
-
-    .container .option_item .checkbox {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 1;
-      opacity: 0;
-
-    }
-
-    .option_item .option_inner {
-      width: 149px;
-      height: 40px;
-      background: #fff;
-      border-radius: 5px;
-      text-align: center;
-      cursor: pointer;
-      color: #585c68;
-      display: block;
-      margin-left: -215px;
-      margin-top: -20px;
-      border: 1px solid black;
-      position: relative;
-    }
-
-    .option_item .option_inner .icon {
-      margin-bottom: 10px;
-    }
-
-    .option_item .option_inner .icon img {
-      width: 25px;
-      margin-top: 5px;
-      margin-left: -40px;
-    }
-
-
-    .option_item .option_inner .name {
-      user-select: none;
-      font-size: 10px;
-
-      margin-left: 55px;
-      margin-top: -44px;
-
-    }
-
-    .option_item .checkbox:checked~.option_inner.facebook {
-      border-color: #3b5999;
-      color: #3b5999;
-    }
-
-    .option_item .checkbox:checked~.option_inner.twitter {
-      border-color: #55acee;
-      color: #55acee;
-    }
-
-    .option_item .checkbox:checked~.option_inner.instagram {
-      border-color: #e4405f;
-      color: #e4405f;
-    }
-
-    .option_item .checkbox:checked~.option_inner.linkedin {
-      border-color: #0077b5;
-      color: #0077b5;
-    }
-
-    .option_item .checkbox:checked~.option_inner.whatsapp {
-      border-color: #25d366;
-      color: #25d366;
-    }
-
-    .option_item .checkbox:checked~.option_inner.google {
-      border-color: #dd4b39;
-      color: #dd4b39;
-    }
-
-    .option_item .checkbox:checked~.option_inner.reddit {
-      border-color: #ff5700;
-      color: #ff5700;
-    }
-
-    .option_item .checkbox:checked~.option_inner.quora {
-      border-color: #b92b27;
-      color: #b92b27;
-    }
-
-    .option_item .option_inner .tickmark {
-      position: absolute;
-      top: 0;
-      left: 0;
-      border: 20px solid;
-      border-color: #000 transparent transparent #000;
-      display: none;
-    }
-
-    .option_item .option_inner .tickmark:before {
-      content: "";
-      position: absolute;
-      top: -18px;
-      left: -18px;
-      width: 15px;
-      height: 5px;
-      border: 3px solid;
-      border-color: transparent transparent #fff #fff;
-      transform: rotate(-45deg);
-    }
-
-    .option_item .checkbox:checked~.option_inner .tickmark {
-      display: block;
-    }
-
-    .option_item .option_inner.facebook .tickmark {
-      border-color: #3b5999 transparent transparent #3b5999;
-    }
-
-
-    .thumbnail {
-      object-fit: cover;
-      max-width: 100px;
-      max-height: 100px;
-      cursor: pointer;
-      margin-left: 15px;
-      opacity: 0.5;
-      margin: 5px;
-
-    }
-
-    .thumbnail:hover {
-      opacity: 1;
-      border: 1px solid black;
-    }
-
-    .active {
-      opacity: 1;
-
-    }
-
-    #slide-wrapper {
-      max-width: 500px;
-      display: flex;
-      min-height: 100px;
-      align-items: center;
-    }
-
-    #slider {
-      width: 440px;
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: hidden;
-    }
-
-
-    .card-2 {
-      width: 900px;
-      height: 900px;
-      border: 1px solid lightgray;
-      box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
-      margin: 2%;
-    }
-
-    .card-2 .image {
-      width: 500px;
-      object-fit: cover;
-      border-radius: 1px;
-      border: 1px solid lightgray;
-      height: 350px;
-      margin-top: 70px;
-      margin-left: 20px;
-      cursor: pointer;
-    }
-
-    .card-2 .image img {
-      margin-left: 100px;
-      margin-top: 30px;
-      height: 80%;
-    }
-
-    .card-2 .info {
-      margin-left: 65%;
-      margin-top: -45%;
-      line-height: 30px;
-      font-weight: bold;
-      font-size: 17px;
-      letter-spacing: .1em;
-
-
-
-
-    }
-
-    .front {
-      margin-left: 10px;
-      color: #0077b5
-    }
-
-    .card-2 .info .rate {
-      color: gold;
-    }
-
-    .sep-rate {
-      display: flex;
-
-
-    }
-
-    .sep-rate .discount {
-      font-weight: 300;
-    }
-
-    .sep-rate .price {
-      font-size: 25px;
-      padding-left: 7px;
-      object-fit: cover;
-      color: red;
-    }
-
-    .arrow {
-      width: 30px;
-      height: 30px;
-      cursor: pointer;
-      transition: .3s;
-    }
-
-    .arrow:hover {
-      opacity: .5;
-      width: 35px;
-      height: 35px;
-    }
-
-    .container-1 {
-      width: 150px;
-      height: 60px;
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      border: 1px solid lightgray;
-    }
-
-    .container-1 img {
-      width: 40px;
-      height: 30px;
-      margin-left: -70px;
-      margin-top: 10px;
-    }
-
-    .image-color {
-      padding: 10px;
-    }
-  </style>
-
+  <link rel="stylesheet" href="./Display/css/style-find.css">
   <body>
     <!-- Button trigger modal -->
 
@@ -415,6 +210,7 @@ if (isset($_GET['product_id'])) {
       </div>
     </div>
     <div>
+    <form  method="post" enctype="multipart/form-data" id="cartform">
       <div class="container ">
         <div class="card-2">
           <div class="image">
@@ -426,14 +222,27 @@ if (isset($_GET['product_id'])) {
             <img src="./product_upload/arrow.jpg" alt="" class="arrow" id="slide_left">
             <div id="slider" style="overflow-x: hidden;">
 
-           <?php foreach ($unique_images as $image): ?>
-    <img src="design_upload/<?php echo $image; ?>"
-         alt=""
-         class="thumbnail"
-         data-color-id="<?php echo $color['color_id']; ?>"
-         data-image="<?php echo htmlspecialchars($row['images']); ?>">
-<?php endforeach; ?>
+  
+            <?php
+foreach ($image_unique as $product) {
+    $images = explode(',', $product['images']);
+    foreach ($images as $index => $image) {
+        $image = trim($image);
 
+        // Unique id for each image and radio button
+        $uniqueId = "image_" . uniqid() . "_" . $index; // Adding uniqid() to prevent potential duplicates
+
+        echo "<div class='image-thumbnail' id='thumbnail_" . $uniqueId . "'>"; // Unique ID for thumbnail
+        echo "<label for='" . $uniqueId . "' class='image-label'>";
+        // Add onclick to select the radio button
+        echo "<img src='design_upload/" . $image . "' alt='Thumbnail' class='thumbnail' onclick=\"selectImage('" . $uniqueId . "')\" data-image='product_upload/" . $image . "'>";
+        echo "</label>";
+        // Radio button with the unique id
+        echo "<input type='radio' name='productsize_id' value='" . $image . "' id='" . $uniqueId . "' hidden>";
+        echo "</div>";
+    }
+}
+?>
 
 
             </div>
@@ -442,16 +251,13 @@ if (isset($_GET['product_id'])) {
           </div>
 
           <div class="info text-dark">
+          <p style="color: red; "> ₱<?php echo $res['price']; ?></p> 
             <div class="product_name">
-              <p><?php echo $res['product_name']; ?> </p>
+              <h2><?php echo $res['product_name']; ?> </h2>
+              <p> <span class="text-danger">Category </span>     <?php echo $res['category_name']; ?> </p>
+         
             </div>
-            <div class="rate">
-              <i class="fa-solid fa-star"></i>
-              <i class="fa-solid fa-star"></i>
-              <i class="fa-solid fa-star"></i>
-              <i class="fa-solid fa-star"></i>
-              <i class="fa-solid fa-star"></i>
-            </div>
+          
             <div class="sep-rate">
 
              
@@ -464,76 +270,147 @@ if (isset($_GET['product_id'])) {
 
 
 
-            <form action="cart-form.php" method="post">
+           
+                 <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($id); ?>">
+                 <input type="hidden" name="price" value="<?php echo $res['price']; ?>">
+            <p  name ="price" id="price" style="display: none;" >Total :<?php echo $res['price']; ?></p> <!-- Display initial price -->
+           
+<!-- Hidden inputs for product details -->
 
-            <input type="hidden" name="product_id" value="<?php echo $res['product_id']; ?>">
-    <!-- Include hidden input fields for size_id, color_id, and quantity -->
-    <input type="hidden" name="size_id" id="selected_size_id" value="">
-    <input type="hidden" name="color_id" id="selected_color_id" value="">
-    <input type="hidden" name="quantity" id="selected_quantity" value="1">
+<button type="button" id="decrement"  class="btn btn-danger btn-sm" style="width:20%;">-</button>
+<!-- Quantity input with buttons to increase or decrease -->
+<input type="number" id="selected_quantity" name="quantity" value="1" min="1" step="1" readonly style="width:20%;">
+<button type="button" id="increment"  class="btn btn-success btn-sm" style="width:20%;">+</button>
+ <br>
               <div class="row">
               <div class="col">
-              <p>Select Size:</p>
-              <?php foreach ($sizes as $size): ?>
-                       
-                        <label class="btn btn-outline-success" for="success-outlined">
-                        <input type="radio" name="size_id" value="<?php echo $size['size_id']; ?>" requiredclass="btn-check" name="options-outlined" id="success-outlined" autocomplete="off" checked>
-                        
-                        <?php echo htmlspecialchars($size['Size']); ?></label>
+             <br>
 
-                        <?php endforeach; ?>
+             <?php
+$qry = mysqli_query($conn, "SELECT DISTINCT
+    sizing.size
+FROM 
+    product_price
+INNER JOIN 
+    product_size ON product_price.product_id = product_size.product_id
+INNER JOIN  
+    sizing ON product_size.size_id = sizing.id
+WHERE 
+    product_price.product_id = '$id'");
+
+$size = [];
+
+// Fetch sizes from the query
+if ($qry && mysqli_num_rows($qry) > 0) {
+    while ($row = mysqli_fetch_assoc($qry)) {
+        $size[] = $row['size']; // Store sizes in the array
+    }
+} else {
+    echo "No sizes available for this product.";
+}
+
+// Ensure unique sizes
+$unique_sizes = array_unique($size);
+?>
+
+<!-- HTML Output -->
+<?php if (!empty($unique_sizes)): ?>
+    <div id="size-container">
+        <label for="size">Select Size:</label>
+        <select name="Size" id="size">
+            <option value="">Choose a size</option> <!-- Default option -->
+            <?php foreach ($unique_sizes as $size): ?>
+                <option value="<?php echo htmlspecialchars($size); ?>">
+                    <?php echo htmlspecialchars($size); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <p id="size-error" style="color: red; display: none; font-size: 0.9em;">Please select a size.</p>
+<?php else: ?>
+    <p>No sizes available for this product.</p>
+<?php endif; ?>
+
+
               </div>
-        <br>
+ 
        
-    
+      
+      </div>
+      <div class="row">
+      <div class="col">
+      
+      <script>
+document.getElementById('add-to-cart').addEventListener('click', function () {
+    const sizeDropdown = document.getElementById('size');
+    const sizeError = document.getElementById('size-error');
+
+    // Reset styles and error message
+    sizeDropdown.style.border = '';
+    sizeError.style.display = 'none';
+
+    // Check if a size is selected
+    if (!sizeDropdown.value) {
+        // Highlight dropdown with red border
+        sizeDropdown.style.border = '2px solid red';
+
+        // Show error message
+        sizeError.style.display = 'block';
+
+        // Prevent further action (e.g., form submission)
+        return;
+    }
+
+    // If size is selected, proceed (e.g., submit form or call add-to-cart logic)
+    alert('Size selected: ' + sizeDropdown.value);
+});
+</script>
+
+
+
+<script>
+function selectImage(radioId) {
+    // Find all image-thumbnail elements and remove the 'selected' class
+    document.querySelectorAll('.image-thumbnail').forEach((thumbnail) => {
+        thumbnail.classList.remove('selected');
+    });
+
+    // Add the 'selected' class to the currently selected thumbnail
+    const selectedThumbnail = document.getElementById('thumbnail_' + radioId);
+    if (selectedThumbnail) {
+        selectedThumbnail.classList.add('selected');
+    }
+
+    // Ensure the radio button is checked
+    const radio = document.getElementById(radioId);
+    if (radio) {
+        radio.checked = true;
+    }
+}
+</script>
+
+
+
+
+
+
+      </div>
 
               </div>
 
 
-              
-              <div class="row">
-              <div class="col">
-              
-             
 
             
-              </div>
-    
-       
-    
-
-              </div>
 
 
           </div>
           
           
-
-          <div class="sub" style="margin-top: 20px;">
-
-
-            <div class="row">
-              <div class="col-md-4">
-
-               <br><br>
-
-                <div class="input-group mb-3 quantity ">
-                  <button class="input-group-text  btn-subtract" type="button">-</button>
-
-                  <input type="hidden" name="product_id" value="<?php echo $res['product_id'] ?>">
-                  <input type="number" class="form-control item-quantity " id=" quantity" name='quantity'>
-                  <button class="input-group-text  btn-add" type="button">+</button>
-
-                </div>
-              </div>
-
-            </div>
-
+<br><br>
+      
        
                <div class="button">
-              <button type="submit" class="btn btn-secondary btn-xs pull-right"name="action">
-                <li class="fa fa-cart-arrow-down"></li> Add To Cart
-
+               <button type="submit" class="btn btn-secondary" name="action" value="add_to_cart" id="add-to-cart">Add To Cart</button>
 
               </button>
               <button type="submit" class="btn btn-success buy" name="action" value="buy_now">Buy now</button>
@@ -545,44 +422,96 @@ if (isset($_GET['product_id'])) {
       </div>
     </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+
+// click  select  radio of   the images
+
+$(document).ready(function () {
+    // Add click event to thumbnails
+    $('.thumbnail').on('click', function () {
+        // Get the data-image attribute of the clicked image
+        const selectedImage = $(this).data('image');
+        
+        // Mark the corresponding radio button as checked
+        const radioButton = $(this).closest('.image-thumbnail').find('input[type="radio"]');
+        radioButton.prop('checked', true);
+
+        // Optional: Add visual feedback for the selected image
+        $('.thumbnail').removeClass('selected');
+        $(this).addClass('selected');
+
+        // Send the selected image to the server using AJAX
+       
+    });
+});
+</script>
+
+    </script>
+
+   
+
+    <script>
+    
 
 
+
+document.getElementById('increment').addEventListener('click', function() {
+    var quantityInput = document.getElementById('selected_quantity');
+    var quantity = parseInt(quantityInput.value);
+    quantityInput.value = quantity + 1;
+
+    // Show the freebie if quantity >= 3
+    if (quantity + 1 >= 3) {
+        document.getElementById('freebie').style.display = 'block';
+    }
+});
+
+
+
+// JavaScript to handle increment, decrement, and dynamic price update
+document.getElementById('increment').addEventListener('click', function() {
+    let quantity = document.getElementById('selected_quantity').value;
+    quantity++;
+    document.getElementById('selected_quantity').value = quantity;
+
+    updatePrice(quantity);
+});
+
+document.getElementById('decrement').addEventListener('click', function() {
+    let quantity = document.getElementById('selected_quantity').value;
+    if (quantity > 1) {
+        quantity--;
+        document.getElementById('selected_quantity').value = quantity;
+    }
+
+    updatePrice(quantity);
+});
+
+function updatePrice(quantity) {
+    // Fetch the base price from the hidden element
+    let basePrice = <?php echo $res['price']; ?>;
+    let totalPrice = basePrice * quantity;
+
+    // Update the price displayed on the page
+    document.getElementById('price').innerText = totalPrice.toFixed(2);
+}
+</script>
 
     <script src="./Display/Js/js-quantity.js"></script>
     <script type="text/javascript">
+
+document.querySelectorAll('input[name="productsize_id"]').forEach(input => {
+    input.addEventListener('change', () => {
+        console.log(`Selected product: ${input.value}`);
+    });
+});
       let thumbnails = document.getElementsByClassName('thumbnail');
       let activeImage = document.getElementsByClassName('active');
       const colorRadios = document.querySelectorAll('.color-radio');
       const featuredImage = document.getElementById('featured');
 
 
-      document.addEventListener('DOMContentLoaded', function () {
-        const sizeRadios = document.querySelectorAll('.size-radio');
-        const colorRadios = document.querySelectorAll('.color-radio');
-        const quantityInput = document.getElementById('quantity');
-        const selectedSizeIdInput = document.getElementById('selected_size_id');
-        const selectedColorIdInput = document.getElementById('selected_color_id');
-        const selectedQuantityInput = document.getElementById('selected_quantity');
-
-        // Event listeners for size and color selection
-        sizeRadios.forEach(radio => {
-            radio.addEventListener('change', function () {
-                selectedSizeIdInput.value = this.value;
-            });
-        });
-
-        colorRadios.forEach(radio => {
-            radio.addEventListener('change', function () {
-                selectedColorIdInput.value = this.value;
-                // Optionally update main product image based on selected color
-            });
-        });
-
-        // Event listener for quantity input
-        quantityInput.addEventListener('change', function () {
-            selectedQuantityInput.value = this.value;
-        });
-    });
+    
       for (var i = 0; i < thumbnails.length; i++) {
         console.log(activeImage)
         thumbnails[i].addEventListener('mouseover', function() {
@@ -641,8 +570,14 @@ if (isset($_GET['product_id'])) {
                     });
                 });
             });
+
+
+          
+</script>
       
     </script>
+
+    
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
   </body>

@@ -120,30 +120,17 @@
 
                         <a href="pricing.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Pricing</a>
                         <a href="branch.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Branch</a>
-                <a href="category.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Category</a>
+           
                 <a href="size.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
                    Size</a>
                 
                   <!-- Include Bootstrap CSS -->
 
+                  <a href="refund.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Refund</a>
+
 
 <!-- Dropdown -->
-<div class="dropdown">
-  <a 
-    class="list-group-item list-group-item-action bg-transparent second-text fw-bold dropdown-toggle" 
-    href="#" 
-    role="button" 
-    id="dropdownMenuLink" 
-    data-bs-toggle="dropdown" 
-    aria-expanded="false">
-    Payment
-  </a>
-  <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-    <li><a class="dropdown-item" href="payment.php">Payment Type</a></li>
-    <li><a class="dropdown-item" href="Payment_method.php">Payment method</a></li>
-  
-  </ul>
-</div>
+
 
 <!-- Include Bootstrap JS -->
 
@@ -152,11 +139,11 @@
               
                             <a href="Sales.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Sales</a>
                             
-                            <a href="Sales.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Inventory</a>
+                            <a href="Inventory.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Inventory</a>
                             
                             <a href="Calendar_event.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Calendar Event</a>
                             
-                            <a href="Sales.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Feedback</a>
+                            <a href="./feedback-admin.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">Feedback</a>
                             <a href="Sales.php" class="list-group-item list-group-item-action bg-transparent second-text fw-bold"> Report</a>
                             
                         

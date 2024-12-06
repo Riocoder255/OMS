@@ -1,0 +1,46 @@
+Array
+(
+    [cart_items] => [{"cart_id":"181","total_price":"14400.00"}]
+    [total_amount] => 14400
+    [branch] => 3
+    [payment_type] => Downpayment
+    [payment_method] => Over the Counter
+    [final_amount] => 7200.00
+    [remaining_balance] => 
+)
+Array
+(
+    [cart_id] => 181
+    [total_price] => 14400.00
+)
+Array
+(
+    [cart_id] => 181
+    [total_price] => 14400.00
+)
+
+JSON Decode Error: Syntax error
+
+JSON Decode Error: Syntax error
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}
+{"amount":480000,"payment_method":"gcash"}

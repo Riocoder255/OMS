@@ -3,11 +3,11 @@ include './admin_connect.php';
 session_start();
 
 if (isset($_POST['login_btn'])) {
-    $uname = $_POST['uname'];
+    $email = $_POST['email'];
     $pass = $_POST['pass'];
 
     // Fetch user details from the database
-    $login_query = "SELECT * FROM user_form WHERE email='$uname' LIMIT 1";
+    $login_query = "SELECT * FROM user_form WHERE email='$email'";
     $run_login = mysqli_query($conn, $login_query);
 
     if (mysqli_num_rows($run_login) > 0) {
@@ -59,4 +59,5 @@ if (isset($_POST['login_btn'])) {
     header('Location: login.php');
     exit(0);
 }
+
 ?>

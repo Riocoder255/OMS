@@ -94,9 +94,9 @@ require_once "admin_connect.php";
                 const eventTitle = info.event.title;
 
                 // Prompt for Edit or Delete
-                if (confirm(`Do you want to edit "${eventTitle}"?`)) {
-                    window.location.href = `edit_event.php?id=${eventId}`;
-                } else if (confirm(`Do you want to delete "${eventTitle}"?`)) {
+              
+                  
+                 if (confirm(`Do you want to delete "${eventTitle}"?`)) {
                     if (confirm("Are you sure? This action cannot be undone.")) {
                         $.ajax({
                             url: 'delete_event.php',    
